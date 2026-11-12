@@ -1,0 +1,92 @@
+# Lista を Docker Compose で動かす（導入・運用ガイド: docs/manual/admin/quickstart.md）
+#
+# 使い方:
+#   1. このファイルと lista.env.example を同じフォルダーに置く
+#   2. lista.env.example を .env という名前で写し、値を入れる
+#   3. docker compose up -d
+#
+# - Lista は 127.0.0.1:8080 にだけ出す. 利用者の入口は、同じホストのリバースプロキシ（https）にする
+# - データはすべて PostgreSQL（名前つきボリューム pgdata）に入る. バックアップするのはこれだけ
+# - IP メッセンジャーの在席で朝のまとめを送るときは、compose.ipmsg.yaml を重ねる（docs/manual/admin/notifications.md）
+name: lista
+
+services:
+  webapp:
+    image: ghcr.io/propagandist/lista:${LISTA_VERSION:?.env の LISTA_VERSION に版を入れてください}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${LISTA_PORT:-8080}:8080"
+    environment:
+      # コンテナの中では全体で待ち受ける. 外へ出すのは上の ports の 127.0.0.1 だけ
+      SERVER_ADDRESS: 0.0.0.0
+      DB_URL: jdbc:postgresql://db:5432/lista
+      DB_USERNAME: lista
+      DB_PASSWORD: ${DB_PASSWORD:?.env の DB_PASSWORD を入れてください}
+      LISTA_BASE_URL: ${LISTA_BASE_URL:?.env の LISTA_BASE_URL を入れてください}
+      LISTA_OIDC_ISSUER_URI: ${LISTA_OIDC_ISSUER_URI:?.env の LISTA_OIDC_ISSUER_URI を入れてください}
+      LISTA_OIDC_CLIENT_ID: ${LISTA_OIDC_CLIENT_ID:?.env の LISTA_OIDC_CLIENT_ID を入れてください}
+      LISTA_OIDC_CLIENT_SECRET: ${LISTA_OIDC_CLIENT_SECRET:?.env の LISTA_OIDC_CLIENT_SECRET を入れてください}
+      LISTA_OIDC_LOGIN_LABEL: ${LISTA_OIDC_LOGIN_LABEL:-ログイン}
+      LISTA_OIDC_USERNAME_AS_EMAIL: ${LISTA_OIDC_USERNAME_AS_EMAIL:-false}
+      LISTA_INITIAL_ACCOUNT_EMAIL: ${LISTA_INITIAL_ACCOUNT_EMAIL:-}
+      # bridge ネットワークにはブロードキャストが届かないので、IP メッセンジャーの在席は見ない
+      LISTA_IPMSG_LISTEN: "false"
+      LISTA_NTFY_BASE_URL: ${LISTA_NTFY_BASE_URL:-}
+      LISTA_NTFY_PUBLIC_URL: ${LISTA_NTFY_PUBLIC_URL:-}
+      LISTA_NTFY_TOKEN: ${LISTA_NTFY_TOKEN:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xms128m -Xmx384m -XX:+UseSerialGC}
+    healthcheck:
+      # イメージに curl が無いので、待ち受けているかだけを見る
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lista
+      POSTGRES_USER: lista
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?.env の DB_PASSWORD を入れてください}
+    volumes:
+      # postgres:18 はデータを /var/lib/postgresql/18/docker に置く. 親のフォルダーを渡す
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U lista -d lista"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ntfy（スマートフォンや PC のアプリへの通知. 任意）. .env の COMPOSE_PROFILES=ntfy で起動する.
+  # 設定の手順は docs/manual/admin/notifications.md. 設定する前に起動しない（アクセス制御の無い ntfy を立てないため）
+  ntfy:
+    image: binwiederhier/ntfy:v2.34.0@sha256:901e14503d3f605f445be0e68f2ac71f0aa73391897ce6ceb599f8c48d8b3792
+    restart: unless-stopped
+    profiles: [ntfy]
+    command: serve
+    environment:
+      NTFY_BASE_URL: ${LISTA_NTFY_PUBLIC_URL:-}
+      NTFY_LISTEN_HTTP: ":80"
+      NTFY_CACHE_FILE: /var/lib/ntfy/cache.db
+      NTFY_CACHE_DURATION: 24h
+      NTFY_AUTH_FILE: /var/lib/ntfy/auth.db
+      # 既定はすべて拒否する. lista-* の読みを誰にでも、書きを lista-publisher にだけ許す
+      NTFY_AUTH_DEFAULT_ACCESS: deny-all
+      NTFY_BEHIND_PROXY: "true"
+      NTFY_ENABLE_SIGNUP: "false"
+      NTFY_ENABLE_LOGIN: "false"
+    ports:
+      - "127.0.0.1:${LISTA_NTFY_PORT:-2586}:80"
+    volumes:
+      - ntfy:/var/lib/ntfy
+
+volumes:
+  pgdata:
+  ntfy:

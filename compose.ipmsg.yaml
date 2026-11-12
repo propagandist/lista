@@ -1,0 +1,25 @@
+# IP メッセンジャーの在席で朝のまとめを送るときに、compose.yaml へ重ねる（docs/manual/admin/notifications.md）.
+#
+#   docker compose -f compose.yaml -f compose.ipmsg.yaml up -d
+#
+# 在席の知らせ（UDP 2425 のブロードキャスト）は bridge ネットワークに届かないので、Lista をホストのネットワークで動かす.
+# - Lista はホストの 127.0.0.1:8080 で待ち受ける（LAN からは届かない. 入口は同じホストのリバースプロキシ）
+# - ホストの UDP 2425 を Lista が使う. 同じホストで IP メッセンジャーを動かさない
+# - ホストのネットワークからはサービス名（db・ntfy）を引けないので、DB と ntfy を 127.0.0.1 に出して繋ぐ
+services:
+  webapp:
+    network_mode: host
+    ports: !reset []
+    environment:
+      SERVER_ADDRESS: 127.0.0.1
+      PORT: ${LISTA_PORT:-8080}
+      DB_URL: jdbc:postgresql://127.0.0.1:${LISTA_DB_PORT:-15432}/lista
+      LISTA_IPMSG_LISTEN: "true"
+      # 在席確認を送るブロードキャストアドレス. 255.255.255.255 で届かなければ、セグメントのアドレス（例: 192.0.2.255）
+      LISTA_IPMSG_BROADCAST: ${LISTA_IPMSG_BROADCAST:-255.255.255.255}
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/${LISTA_PORT:-8080}"]
+
+  db:
+    ports:
+      - "127.0.0.1:${LISTA_DB_PORT:-15432}:5432"
