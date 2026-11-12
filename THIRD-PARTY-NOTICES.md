@@ -1,6 +1,6 @@
 # 第三者のソフトウェア
 
-`ghcr.io/propagandist/lista` のイメージに含まれる、株式会社 PROPAGANDIST 以外が権利を持つソフトウェアの一覧です。それぞれのライセンスに従います。[LICENSE](LICENSE) の制限は、ここに挙げたソフトウェアには掛かりません（LICENSE 第 5 条）。
+`ghcr.io/propagandist/lista` のイメージに含まれる、PROPAGANDIST 株式会社 以外が権利を持つソフトウェアの一覧です。それぞれのライセンスに従います。[LICENSE](LICENSE) の制限は、ここに挙げたソフトウェアには掛かりません（LICENSE 第 5 条）。
 
 この一覧は、公開する版のイメージから作ります（[docs/release-check.md](docs/release-check.md)）。★ 下書きは 0.9.1 の中身で作った。公開する版のイメージで作り直す
 
