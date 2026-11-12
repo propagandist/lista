@@ -6,7 +6,11 @@
 
 ## 0. 版を作る（lista-internal の側）
 
-- [ ] `lista-internal` の develop の先頭に注釈つきタグを打ち、`gh workflow run release.yml --ref develop -f distribute=true` で流す。版がタグちょうど（`x.y.z`）でなければ、ワークフローが push せずに落ちる
+**★ 2 回目の版からは、ワークフローの push がそのまま公開になる。** パッケージは 0.9.2 で public にしてあるので、push が終わった時点で、ログインせずに `docker pull` が通る（2026-11-13 実測。0.10.0）。だから、流す前に、同じコミットから手元で作った jar で §1〜3 を回す（propagandist/lista-internal#157）。初めての版（パッケージを public にする前）は、この段を飛ばして、上から順に通せばよい。
+
+- [ ] `lista-internal` の develop の先頭に注釈つきタグを打つ。まだ流さない
+- [ ] 2 回目の版から: `lista-internal` の同じタグを手元で checkout し、`./gradlew :components:webapp:bootJar` で jar を作る。その jar で、§1 の空の DB・jar の中の社内の値・秘密と、§3 の `BOOT-INF/lib/` の数と GPL・LGPL・AGPL を回す。§2 は前の版のタグからの差分で見る。イメージでしか見られないもの（§1 のラベル、§3 の Typst の版と `/usr/share/doc/typst/`）は、push の後に回す
+- [ ] `gh workflow run release.yml --ref develop -f distribute=true` で流す。版がタグちょうど（`x.y.z`）でなければ、ワークフローが push せずに落ちる
 - [ ] Summary に `ghcr.io/propagandist/lista:<版>`（linux/amd64・linux/arm64）が出ていること
 - [ ] push が `denied` で落ちたら: パッケージの設定の「Manage Actions access」に `lista-internal` が Write で入っているかを見る（2026-11-12 に足した）。入っていれば、失敗したジョブを流し直す（下の ★）
 - [ ] このリポジトリの `docs/manual/` と、直下の `compose.yaml`・`compose.ipmsg.yaml`・`lista.env.example` を、`lista-internal` の同じタグの `docs/manual/` から写し直す（`git archive <版> docs/manual`）
