@@ -15,7 +15,8 @@ Lista を使う人のためのガイドです。
 7. [テンプレート](user/templates.md)
 8. [通知の受け取り方](user/notifications.md)
 9. [利用者の管理](user/accounts.md)
-10. [困ったとき](user/faq.md)
+10. [休日](user/holidays.md)
+11. [困ったとき](user/faq.md)
 
 ## 導入・運用ガイド（管理者向け）
 
