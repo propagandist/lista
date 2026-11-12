@@ -8,7 +8,7 @@
 
 - [ ] `lista-internal` の develop の先頭に注釈つきタグを打ち、`gh workflow run release.yml --ref develop -f distribute=true` で流す。版がタグちょうど（`x.y.z`）でなければ、ワークフローが push せずに落ちる
 - [ ] Summary に `ghcr.io/propagandist/lista:<版>`（linux/amd64・linux/arm64）が出ていること
-- [ ] push が `denied` で落ちたら: パッケージはラベルで `propagandist/lista`（このリポジトリ）に結び付き、push するのは `lista-internal` のワークフローなので、書き込みが許されていないことがある。パッケージの設定の「Manage Actions access」に `lista-internal` を Write で足してから、失敗したジョブを流し直す（確かめていない。初めての版で確かめて、この行を直す）
+- [ ] push が `denied` で落ちたら: パッケージの設定の「Manage Actions access」に `lista-internal` が Write で入っているかを見る（2026-11-12 に足した）。入っていれば、失敗したジョブを流し直す（下の ★）
 - [ ] このリポジトリの `docs/manual/` と、直下の `compose.yaml`・`compose.ipmsg.yaml`・`lista.env.example` を、`lista-internal` の同じタグの `docs/manual/` から写し直す（`git archive <版> docs/manual`）
 
 ## 1. イメージに社内のデータが入っていないか
@@ -45,3 +45,5 @@
 - [ ] ログインせずに `docker pull ghcr.io/propagandist/lista:<版>` が通ること
 
 **★ 新しいパッケージへの最初の push は、manifest の push で `denied` になることがある**（2026-11-11 実測。`lista-nas` を作ったとき）。パッケージは作られ、リポジトリに結び付いていた。失敗したジョブを流し直すと通った。
+
+**★ パッケージの結び付き先は、イメージのラベル（`org.opencontainers.image.source`）では決まらなかった**（2026-11-12 実測）。`lista-internal` のワークフローが `GITHUB_TOKEN` で最初に push したら `lista-internal` に結び付き、手元から push し直したら、どこにも結び付かなかった。ラベルは CPU ごとのイメージにあり、manifest list には無い。パッケージのページ（https://github.com/orgs/propagandist/packages/container/package/lista ）の「Connect Repository」で、このリポジトリに結び付けた。パッケージを作り直したら、結び付け直すことと、「Manage Actions access」に `lista-internal` を Write で足すことを忘れない
