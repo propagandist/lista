@@ -38,6 +38,7 @@
 
 ## 5. 公開する
 
+- [ ] このリポジトリに `main` 以外のブランチが無く、`main` にソース（`components/`・`build.gradle.kts` など）が無いこと。`git ls-remote --heads origin` と `gh api repos/propagandist/lista/git/trees/main?recursive=1 --jq '.tree[].path'` で見る。改名する前の名前（`propagandist/lista`）を remote に持つ clone から push すると、`lista-internal` のソースがここへ届く
 - [ ] 初めての版だけ: パッケージ `ghcr.io/propagandist/lista` を public にする（パッケージの設定の Danger Zone）
 - [ ] Release はドラフトで作り、本文を読んでから公開する。名前は `<版> — <位置づけ>`
 - [ ] 公開した後に、Release が右柱に出ていることを見る（ドラフトのままだと外から見えない）
